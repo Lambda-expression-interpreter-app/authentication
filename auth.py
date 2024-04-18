@@ -17,15 +17,15 @@ class AuthClient:
         else:
             return False
 
-    def register(self, username, password):
+    def register(self, username, password, email):
         url = f"{self.base_url}/register"
-        data = {"username": username, "password": password}
+        data = {"username": username, "password": password, "email": email}
         response = requests.post(url, json=data)
         return response.json()["success"]
 
-    def unregister(self, username):
+    def unregister(self, username, password, email):
         url = f"{self.base_url}/unregister"
-        data = {"username": username}
+        data = {"username": username, "password": password, "email": email}
         response = requests.post(url, json=data)
         return response.json()["success"]
 #response e un json cu succes: fals/true
@@ -45,7 +45,8 @@ if __name__ == '__main__':
         if choice == "1":
             username = input("Enter username: ")
             password = input("Enter password: ")
-            if auth_client.register(username, password):
+            email = input("Enter email: ")
+            if auth_client.register(username, password, email):
                 print(f"Registered user: {username}")
             else:
                 print("Failed to register.")
@@ -61,7 +62,9 @@ if __name__ == '__main__':
         
         elif choice == "3":
             username = input("Enter username: ")
-            if auth_client.unregister(username):
+            password = input("Enter password: ")
+            email = input("Enter email: ")
+            if auth_client.unregister(username, password, email):
                 print(f"Unregistered user: {username}")
             else:
                 print("Failed to unregister.")
