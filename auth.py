@@ -1,5 +1,9 @@
 import requests
 import secrets
+import hashlib
+
+def compute_hash(string):
+    return hashlib.sha512(string.encode()).hexdigest()
 
 class AuthClient:
     def __init__(self, base_url):
@@ -8,7 +12,7 @@ class AuthClient:
 
     def login(self, username, password):
         url = f"{self.base_url}/login"
-        data = {"username": username, "password": password}
+        data = {"username": compute_hash(username), "password": compute_hash(password)}
         response = requests.post(url, json=data)
         
         if response.json()["success"]:
@@ -19,22 +23,26 @@ class AuthClient:
 
     def register(self, username, password, email):
         url = f"{self.base_url}/register"
-        data = {"username": username, "password": password, "email": email}
+        data = {"username": compute_hash(username), "password": compute_hash(password), "email": compute_hash(email)}
         response = requests.post(url, json=data)
         result = response.json()["success"]
-        print(result)
-        return result == 'Success'
+        if result != 'Success':
+            print(result)
+            return False
+        return True
 
     def unregister(self, username, password, email):
         url = f"{self.base_url}/unregister"
-        data = {"username": username, "password": password, "email": email}
+        data = {"username": compute_hash(username), "password": compute_hash(password), "email": compute_hash(email)}
         response = requests.post(url, json=data)
         result = response.json()["success"]
-        print(result)
-        return result == 'Success'
-#response e un json cu succes: fals/true
+        if result != 'Success':
+            print(result)
+            return False
+        return True
+
 if __name__ == '__main__':
-    base_url = "http://127.0.0.1:25000" # url-ul database API/ de schimbat in url-ul adevarat
+    base_url = "http://127.0.0.1:25000" # url-ul database API
     auth_client = AuthClient(base_url)
     
     while True:
@@ -52,8 +60,6 @@ if __name__ == '__main__':
             email = input("Enter email: ")
             if auth_client.register(username, password, email):
                 print(f"Registered user: {username}")
-            else:
-                print("Failed to register.")
         
         elif choice == "2":
             username = input("Enter username: ")
@@ -62,7 +68,7 @@ if __name__ == '__main__':
                 print(f"Logged in successfully as: {username}")
                 print(f"Token: {auth_client.token}")
             else:
-                print("Failed to login.")
+                print("Invalid username-password combination.")
         
         elif choice == "3":
             username = input("Enter username: ")
@@ -70,8 +76,6 @@ if __name__ == '__main__':
             email = input("Enter email: ")
             if auth_client.unregister(username, password, email):
                 print(f"Unregistered user: {username}")
-            else:
-                print("Failed to unregister.")
         
         elif choice == "4":
             print("Exiting...")
