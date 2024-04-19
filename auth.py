@@ -21,16 +21,20 @@ class AuthClient:
         url = f"{self.base_url}/register"
         data = {"username": username, "password": password, "email": email}
         response = requests.post(url, json=data)
-        return response.json()["success"]
+        result = response.json()["success"]
+        print(result)
+        return result == 'Success'
 
     def unregister(self, username, password, email):
         url = f"{self.base_url}/unregister"
         data = {"username": username, "password": password, "email": email}
         response = requests.post(url, json=data)
-        return response.json()["success"]
+        result = response.json()["success"]
+        print(result)
+        return result == 'Success'
 #response e un json cu succes: fals/true
 if __name__ == '__main__':
-    base_url = "http://localhost:5000" # url-ul database API/ de schimbat in url-ul adevarat
+    base_url = "http://127.0.0.1:25000" # url-ul database API/ de schimbat in url-ul adevarat
     auth_client = AuthClient(base_url)
     
     while True:
