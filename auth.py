@@ -54,7 +54,8 @@ class AuthClient:
             return None
  
 if __name__ == '__main__':
-    base_url = "http://127.0.0.1:25000" # url-ul database API
+    # base_url = "http://127.0.0.1:25000" # url-ul database API
+    base_url = "http://script:6000" # url-ul database API
     #IMPORTANT DE VAZUT CARE I ADRESA#
     auth_client = AuthClient(base_url)
    
