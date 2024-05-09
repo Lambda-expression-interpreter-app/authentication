@@ -106,9 +106,8 @@ def main():
                     if choice == "1":
                         code = input("Enter code: ")
                         url = f"{interpreter_url}/interpreter"
-                        data = {"code": code}
                         headers = {"Authorization": f"Bearer {auth_client.token}"}
-                        response = requests.post(url, json=data, headers=headers)
+                        response = requests.post(url, data=code, headers=headers)
                         if response.status_code == 200:
                             result = response.text
                             if result == 'Unauthorized access':
