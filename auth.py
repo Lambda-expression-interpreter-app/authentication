@@ -16,11 +16,15 @@ class AuthClient:
         response = requests.post(url, json=data)
         if response.status_code == 200:
             result = response.json()["success"]
-            if result != 'Success':
-                print(result)
-                return False
-            self.token = secrets.token_hex(16)    
-            return True
+            match str(result):
+                case 'True':
+                    self.token = secrets.token_hex(16)    
+                    return True
+                case 'False':
+                    return False
+                case _:
+                    print("Returned message: " + str(result)) # some other (unknown) error
+                    return False
         else:
             print(f"Error {response.status_code}: {response.text}")
             return None
