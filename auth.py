@@ -11,6 +11,10 @@ class AuthClient:
         self.token = None
  
     def login(self, username, password):
+        if self.token is not None:
+            print("You are already logged in with a user. Please logout first.")
+            return None
+        
         url = f"{self.base_url}/login"
         data = {"username": compute_hash(username), "password": compute_hash(password)}
         response = requests.post(url, json=data)
@@ -28,6 +32,12 @@ class AuthClient:
         else:
             print(f"Error {response.status_code}: {response.text}")
             return None
+        
+    def logout(self):
+        if self.token is not None:
+            self.token = None
+        else:
+            print("You are not logged in with any user.")
    
     def register(self, username, password, email):
         url = f"{self.base_url}/register"
@@ -57,10 +67,8 @@ class AuthClient:
             print(f"Error {response.status_code}: {response.text}")
             return None
  
-if __name__ == '__main__':
-    # base_url = "http://127.0.0.1:25000" # url-ul database API
-    base_url = "http://script:6000" # url-ul database API
-    #IMPORTANT DE VAZUT CARE I ADRESA#
+def main():
+    base_url = "http://script:6000" # the URL of the database API
     auth_client = AuthClient(base_url)
    
     while True:
@@ -85,6 +93,38 @@ if __name__ == '__main__':
             if auth_client.login(username, password):
                 print(f"Logged in successfully as: {username}")
                 print(f"Token: {auth_client.token}")
+                
+                # access the interpreter API
+                interpreter_url = "http://compiler:8000"
+                while True:
+                    print("\nChoose an option:")
+                    print("1. Execute code")
+                    print("2. Logout")
+                   
+                    choice = input("\nEnter your choice (1-2): ")
+                   
+                    if choice == "1":
+                        code = input("Enter code: ")
+                        url = f"{interpreter_url}/interpreter"
+                        data = {"code": code}
+                        headers = {"Authorization": f"Bearer {auth_client.token}"}
+                        response = requests.post(url, json=data, headers=headers)
+                        if response.status_code == 200:
+                            result = response.text
+                            if result == 'Unauthorized access':
+                                print("Unauthorized access. Please login first.")
+                            else:
+                                print(f"Result: {result}")
+                        else:
+                            print(f"Error {response.status_code}: {response.text}")
+                       
+                    elif choice == "2":
+                        auth_client.logout()
+                        print("Logged out successfully.")
+                        break
+                   
+                    else:
+                        print("Invalid choice. Please enter either 1 or 2.")
             else:
                 print("Invalid username-password combination.")
        
@@ -93,7 +133,7 @@ if __name__ == '__main__':
             password = input("Enter password: ")
             email = input("Enter email: ")
             if auth_client.unregister(username, password, email):
-                print(f"Unregistered user: {username}")
+                print(f"Successfully unregistered user: {username}")
        
         elif choice == "4":
             print("Exiting...")
@@ -101,3 +141,6 @@ if __name__ == '__main__':
        
         else:
             print("Invalid choice. Please enter a number between 1 and 4.")
+
+if __name__ == '__main__':
+    main()
