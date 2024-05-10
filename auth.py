@@ -92,7 +92,6 @@ def main():
             password = input("Enter password: ")
             if auth_client.login(username, password):
                 print(f"Logged in successfully as: {username}")
-                print(f"Token: {auth_client.token}")
                 
                 # access the interpreter API
                 interpreter_url = "http://interpreter:8001"
