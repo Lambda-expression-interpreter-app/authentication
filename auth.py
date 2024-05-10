@@ -95,7 +95,7 @@ def main():
                 print(f"Token: {auth_client.token}")
                 
                 # access the interpreter API
-                interpreter_url = "http://compiler:8000"
+                interpreter_url = "http://interpreter:8001"
                 while True:
                     print("\nChoose an option:")
                     print("1. Execute code")
