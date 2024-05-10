@@ -1,7 +1,13 @@
 import requests
 import secrets
 import hashlib
- 
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+base_url = "http://script:6000"  # URL of the database API
+interpreter_url = "http://interpreter:8001"  # URL of the interpreter API
+auth_client = None
+
 def compute_hash(string):
     return hashlib.sha512(string.encode()).hexdigest()
  
@@ -67,78 +73,86 @@ class AuthClient:
             print(f"Error {response.status_code}: {response.text}")
             return None
  
-def main():
-    base_url = "http://script:6000" # the URL of the database API
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+    
     auth_client = AuthClient(base_url)
-   
-    while True:
-        print("\nChoose an option:")
-        print("1. Register")
-        print("2. Login")
-        print("3. Unregister")
-        print("4. Exit")
-       
-        choice = input("\nEnter your choice (1-4): ")
-       
-        if choice == "1":
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            email = input("Enter email: ")
-            if auth_client.register(username, password, email):
-                print(f"Registered user: {username}")
-       
-        elif choice == "2":
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            if auth_client.login(username, password):
-                print(f"Logged in successfully as: {username}")
-                
-                # access the interpreter API
-                interpreter_url = "http://interpreter:8001"
-                while True:
-                    print("\nChoose an option:")
-                    print("1. Execute code")
-                    print("2. Logout")
-                   
-                    choice = input("\nEnter your choice (1-2): ")
-                   
-                    if choice == "1":
-                        code = input("Enter code: ")
-                        url = f"{interpreter_url}/interpreter"
-                        headers = {"Authorization": f"Bearer {auth_client.token}"}
-                        response = requests.post(url, data=code, headers=headers)
-                        if response.status_code == 200:
-                            result = response.text
-                            if result == 'Unauthorized access':
-                                print("Unauthorized access. Please login first.")
-                            else:
-                                print(f"Result: {result}")
-                        else:
-                            print(f"Error {response.status_code}: {response.text}")
-                       
-                    elif choice == "2":
-                        auth_client.logout()
-                        print("Logged out successfully.")
-                        break
-                   
-                    else:
-                        print("Invalid choice. Please enter either 1 or 2.")
+    if auth_client.register(username, password, email):
+        return jsonify({"message": f"Registered user: {username}"}), 200
+    else:
+        return jsonify({"error": "Failed to register user"}), 400
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    global auth_client
+    auth_client = AuthClient(base_url)
+    if auth_client.login(username, password):
+        # Implement login logic
+        # Use requests.post to make HTTP requests to the interpreter API
+        return jsonify({"message": f"Logged in successfully as: {username}"}), 200
+    else:
+        return jsonify({"error": "Invalid username-password combination"}), 401
+
+@app.route('/execute', methods=['POST'])
+def execute():
+    global auth_client
+    if auth_client:
+        data = request.json
+        code = data.get('code')
+        url = f"{interpreter_url}/interpreter"
+        headers = {"Authorization": f"Bearer {auth_client.token}"}
+        response = requests.post(url, data=code, headers=headers)
+        if response.status_code == 200:
+            result = response.text
+            if result == 'Unauthorized access':
+                return jsonify({"error": "Unauthorized access. Please login first."}), 401
             else:
-                print("Invalid username-password combination.")
-       
-        elif choice == "3":
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            email = input("Enter email: ")
-            if auth_client.unregister(username, password, email):
-                print(f"Successfully unregistered user: {username}")
-       
-        elif choice == "4":
-            print("Exiting...")
-            break
-       
+                return jsonify({"result": result}), 200
         else:
-            print("Invalid choice. Please enter a number between 1 and 4.")
+            return jsonify({"error": f"Error {response.status_code}: {response.text}"}), 500
+    else:
+        return jsonify({"error": "Not logged in."}), 400
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    global auth_client
+    if auth_client:
+        auth_client.logout()
+        return jsonify({"message": "Logged out successfully."}), 200
+    else:
+        return jsonify({"error": "Not logged in."}), 400
+
+@app.route('/unregister', methods=['POST'])
+def unregister():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+    
+    auth_client = AuthClient(base_url)
+    if auth_client.unregister(username, password, email):
+        return jsonify({"message": f"Successfully unregistered user: {username}"}), 200
+    else:
+        return jsonify({"error": "Failed to unregister user"}), 400
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
 
 if __name__ == '__main__':
-    main()
+    app.run(host='0.0.0.0', port=5001)
