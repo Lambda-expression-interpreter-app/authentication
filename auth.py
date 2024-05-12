@@ -145,6 +145,7 @@ def unregister():
 
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
+    print("Shutting down server...")
     shutdown_server()
     return 'Server shutting down...'
 
